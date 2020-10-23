@@ -95,6 +95,7 @@ function (agent::Agent)(::Training{PreEpisodeStage}, env)
         pop!(agent.trajectory, :full_action)
     end
     if ActionStyle(env) === FULL_ACTION_SET &&
+       haskey(agent.trajectory, :full_legal_actions_mask) &&
        nframes(agent.trajectory[:full_legal_actions_mask]) > 0
         pop!(agent.trajectory, :full_legal_actions_mask)
     end
@@ -103,7 +104,8 @@ end
 function (agent::Agent)(::Training{PreActStage}, env)
     action = agent.policy(env)
     push!(agent.trajectory; state = get_state(env), action = action)
-    if ActionStyle(env) === FULL_ACTION_SET
+    if ActionStyle(env) === FULL_ACTION_SET &&
+        haskey(agent.trajectory, :legal_actions_mask)
         push!(agent.trajectory; legal_actions_mask = get_legal_actions_mask(env))
     end
     update!(agent.policy, agent.trajectory)
@@ -118,7 +120,8 @@ end
 function (agent::Agent)(::Training{PostEpisodeStage}, env)
     action = agent.policy(env)
     push!(agent.trajectory; state = get_state(env), action = action)
-    if ActionStyle(env) === FULL_ACTION_SET
+    if ActionStyle(env) === FULL_ACTION_SET &&
+        haskey(agent.trajectory, :legal_actions_mask)
         push!(agent.trajectory; legal_actions_mask = get_legal_actions_mask(env))
     end
     update!(agent.policy, agent.trajectory)
